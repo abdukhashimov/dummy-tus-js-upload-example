@@ -1,19 +1,50 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <form>
+    <input type="file" @change="onFileSelected" />
+    <button @click="onButtonClick">Upload</button>
+  </form>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import * as tus from "tus-js-client";
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  name: "App",
+  data() {
+    return {
+      selectedFile: null,
+    };
+  },
+  methods: {
+    onFileSelected(event) {
+      this.selectedFile = event.target.files[0];
+    },
+    onButtonClick(event) {
+      event.preventDefault();
+      console.log("I have been clicked!");
+      let upload = new tus.Upload(this.selectedFile, {
+        endpoint: "https://test.api.najottalim.uz/v1/upload-video/",
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: this.selectedFile.name,
+          filetype: this.selectedFile.type,
+        },
+        onError: (error) => {
+          console.log("Failed because: " + error);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          let percantage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+          console.log(bytesUploaded, bytesTotal, percantage + "%");
+        },
+        onSuccess: () => {
+          console.log("Download %s from %s", upload.file.name, upload.url);
+        },
+      });
+
+      upload.start();
+    },
+  },
+};
 </script>
 
 <style>
